@@ -114,7 +114,7 @@ function ProjectCard({ project }: { project: McRecord }) {
             )}
           </div>
 
-          {project.description && (
+          {!!project.description && (
             <p style={{ fontSize: 12, color: "var(--muted)", margin: "6px 0 0", lineHeight: 1.5 }}>
               {String(project.description).slice(0, 120)}
             </p>

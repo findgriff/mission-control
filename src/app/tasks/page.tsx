@@ -82,7 +82,12 @@ export default async function TasksPage({
 }
 
 function TaskCard({ task }: { task: McRecord }) {
-  const status = String(task.status ?? "unknown");
+  const status          = String(task.status          ?? "unknown");
+  const taskKind        = String(task.taskKind        ?? "");
+  const runtime         = String(task.runtime         ?? "");
+  const agentId         = String(task.agentId         ?? "");
+  const error           = String(task.error           ?? "");
+  const terminalSummary = String(task.terminalSummary ?? "");
   return (
     <div className="card fade-up" style={{ padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -100,14 +105,14 @@ function TaskCard({ task }: { task: McRecord }) {
           {/* Badges row */}
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
             <span className={`badge ${statusClass(status)}`}>{status}</span>
-            {task.taskKind && (
+            {taskKind && (
               <span className="badge" style={{ color: "var(--muted)", borderColor: "var(--border)", background: "transparent" }}>
-                {String(task.taskKind)}
+                {taskKind}
               </span>
             )}
-            {task.runtime && (
+            {runtime && (
               <span className="badge" style={{ color: "var(--dim)", borderColor: "transparent", background: "transparent" }}>
-                {String(task.runtime)}
+                {runtime}
               </span>
             )}
             <span style={{ flex: 1 }} />
@@ -117,34 +122,34 @@ function TaskCard({ task }: { task: McRecord }) {
           </div>
 
           {/* Agent + duration */}
-          {(task.agentId || task.startedAt) && (
+          {(agentId || task.startedAt) && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6 }}>
-              {task.agentId && (
+              {agentId && (
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ opacity: 0.5 }}>agent</span> {String(task.agentId)}
+                  <span style={{ opacity: 0.5 }}>agent</span> {agentId}
                 </span>
               )}
             </div>
           )}
 
           {/* Error */}
-          {task.error && (
+          {error && (
             <div style={{
               marginTop: 8, padding: "6px 10px",
               background: "color-mix(in srgb, var(--red) 8%, transparent)",
               borderRadius: 6, border: "1px solid color-mix(in srgb, var(--red) 20%, transparent)",
             }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--red)" }}>
-                {String(task.error).slice(0, 200)}
+                {error.slice(0, 200)}
               </span>
             </div>
           )}
 
           {/* Terminal summary */}
-          {!task.error && task.terminalSummary && (
+          {!error && terminalSummary && (
             <div style={{ marginTop: 6 }}>
               <span style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                {String(task.terminalSummary).slice(0, 180)}
+                {terminalSummary.slice(0, 180)}
               </span>
             </div>
           )}

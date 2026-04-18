@@ -73,9 +73,14 @@ export default async function CalendarPage({
 }
 
 function CalendarCard({ event }: { event: McRecord }) {
-  const on = event.enabled !== false;
-  const lastStatus = String(event.lastStatus ?? "");
-  const expr = String(event.expr ?? event.at ?? "");
+  // Normalise all unknown SQLite fields to strings up-front.
+  const on           = event.enabled !== false;
+  const lastStatus   = String(event.lastStatus   ?? "");
+  const expr         = String(event.expr         ?? event.at       ?? "");
+  const scheduleKind = String(event.scheduleKind ?? "");
+  const agentId      = String(event.agentId      ?? "");
+  const lastRunAt    = String(event.lastRunAt     ?? "");
+  const payloadText  = String(event.payloadText   ?? "");
 
   return (
     <div className="card fade-up" style={{ padding: "14px 16px", opacity: on ? 1 : 0.55 }}>
@@ -113,23 +118,23 @@ function CalendarCard({ event }: { event: McRecord }) {
                 borderRadius: 5, color: "var(--amber)",
               }}>{expr}</code>
             )}
-            {!!event.scheduleKind && (
+            {scheduleKind && (
               <span className="badge" style={{ color: "var(--muted)", borderColor: "var(--border)", background: "transparent" }}>
-                {String(event.scheduleKind)}
+                {scheduleKind}
               </span>
             )}
-            {!!event.agentId && (
+            {agentId && (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>
-                → {String(event.agentId)}
+                → {agentId}
               </span>
             )}
           </div>
 
-          {(event.lastRunAt || lastStatus) && (
+          {(lastRunAt || lastStatus) && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-              {event.lastRunAt && (
+              {lastRunAt && (
                 <span style={{ fontSize: 11, color: "var(--dim)" }}>
-                  Last run: {String(event.lastRunAt)}
+                  Last run: {lastRunAt}
                 </span>
               )}
               {lastStatus && (
@@ -138,9 +143,9 @@ function CalendarCard({ event }: { event: McRecord }) {
             </div>
           )}
 
-          {event.payloadText && (
+          {payloadText && (
             <p style={{ fontSize: 12, color: "var(--muted)", margin: "6px 0 0", lineHeight: 1.5 }}>
-              {String(event.payloadText).slice(0, 140)}
+              {payloadText.slice(0, 140)}
             </p>
           )}
         </div>
