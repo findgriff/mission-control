@@ -6,10 +6,13 @@ import { revalidatePath } from "next/cache";
 
 const exec = promisify(execFile);
 
+const OPENCLAW_USER_HOME = process.env.OPENCLAW_USER_HOME ?? "/home/clawd";
+const OPENCLAW_BIN_DIR = process.env.OPENCLAW_BIN_DIR ?? `${OPENCLAW_USER_HOME}/.npm-global/bin`;
+
 const CLAW_ENV = {
   ...process.env,
-  PATH: `/home/clawd/.npm-global/bin:/usr/local/bin:/usr/bin:/bin:${process.env.PATH ?? ""}`,
-  HOME: "/home/clawd",
+  PATH: `${OPENCLAW_BIN_DIR}:/usr/local/bin:/usr/bin:/bin:${process.env.PATH ?? ""}`,
+  HOME: OPENCLAW_USER_HOME,
 };
 
 async function runClaw(args: string[]): Promise<{ ok: boolean; output: string }> {

@@ -3,6 +3,19 @@ import path from "node:path";
 import { stat } from "node:fs/promises";
 
 const WORKSPACE = process.env.MISSION_CONTROL_WORKSPACE_ROOT ?? "/home/clawd/clawd";
+const ZIP_EXCLUDES = [
+  ".git/*",
+  "node_modules/*",
+  ".next/*",
+  "dist/*",
+  "build/*",
+  ".env",
+  ".env.*",
+  "*.pem",
+  "*.key",
+  "*.sqlite",
+  "*.db",
+];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,8 +26,10 @@ export async function GET(request: Request) {
   }
 
   // Security: resolve and confirm path is inside the workspace
+  const workspace = path.resolve(WORKSPACE);
   const resolved = path.resolve(projectPath);
-  if (!resolved.startsWith(path.resolve(WORKSPACE))) {
+  const relative = path.relative(workspace, resolved);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
     return new Response("Forbidden", { status: 403 });
   }
 
@@ -31,7 +46,8 @@ export async function GET(request: Request) {
   const stream = new ReadableStream({
     start(controller) {
       // zip -r - . streams the zip to stdout
-      const proc = spawn("zip", ["-r", "-", "."], { cwd: resolved });
+      const excludeArgs = ZIP_EXCLUDES.flatMap((pattern) => ["-x", pattern]);
+      const proc = spawn("zip", ["-r", "-", ".", ...excludeArgs], { cwd: resolved });
 
       proc.stdout.on("data", (chunk: Buffer) => {
         controller.enqueue(new Uint8Array(chunk));

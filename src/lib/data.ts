@@ -1,15 +1,17 @@
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
 import { getOpenProjects } from "@/lib/projects";
 
 const execFileAsync = promisify(execFile);
 
-const TASKS_DB  = "/home/clawd/.openclaw/tasks/runs.sqlite";
-const MEMORY_DB = "/home/clawd/.openclaw/memory/main.sqlite";
-const SESSIONS  = "/home/clawd/.openclaw/agents/main/sessions/sessions.json";
-const CONFIG    = "/home/clawd/.openclaw/openclaw.json";
-const CRON      = "/home/clawd/.openclaw/cron/jobs.json";
+const OPENCLAW_HOME = process.env.OPENCLAW_HOME ?? "/home/clawd/.openclaw";
+const TASKS_DB = process.env.OPENCLAW_TASKS_DB ?? path.join(OPENCLAW_HOME, "tasks/runs.sqlite");
+const MEMORY_DB = process.env.OPENCLAW_MEMORY_DB ?? path.join(OPENCLAW_HOME, "memory/main.sqlite");
+const SESSIONS = process.env.OPENCLAW_SESSIONS_FILE ?? path.join(OPENCLAW_HOME, "agents/main/sessions/sessions.json");
+const CONFIG = process.env.OPENCLAW_CONFIG_FILE ?? path.join(OPENCLAW_HOME, "openclaw.json");
+const CRON = process.env.OPENCLAW_CRON_FILE ?? path.join(OPENCLAW_HOME, "cron/jobs.json");
 
 // ── Shared types ───────────────────────────────────────────────────────────────
 
@@ -131,11 +133,14 @@ export async function getAgents(): Promise<McCollection> {
       }
     }
 
+    const records = [...grouped.values()].map((record) => {
+      delete record._latestMs;
+      return record;
+    });
+
     return {
       source: "sessions.json",
-      items: [...grouped.values()]
-        .map(({ _latestMs: _, ...r }) => r)
-        .sort((a, b) => a.title.localeCompare(b.title)),
+      items: records.sort((a, b) => a.title.localeCompare(b.title)),
     };
   } catch (e) {
     return errCollection("sessions.json", e);
@@ -272,5 +277,15 @@ function pushUnique(arr: unknown, val: unknown) {
 }
 
 function errCollection(source: string, e: unknown): McCollection {
-  return { source, items: [], error: e instanceof Error ? e.message : String(e) };
+  const message = e instanceof Error ? e.message : String(e);
+  if (/unable to open database file/i.test(message)) {
+    return { source, items: [], error: `Unable to read ${source}. Check the configured path and file permissions.` };
+  }
+  if (/ENOENT|no such file or directory/i.test(message)) {
+    return { source, items: [], error: `Unable to find ${source}. Check the configured path.` };
+  }
+  if (/permission denied|EACCES/i.test(message)) {
+    return { source, items: [], error: `Unable to access ${source}. Check service account permissions.` };
+  }
+  return { source, items: [], error: `Unable to load ${source}. Check server logs for details.` };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { spawnAgent, type AgentActionState } from "@/actions";
 
 const SOUL_PRESETS = [
@@ -24,9 +24,11 @@ function SpawnAgentModal() {
   const open = () => dialogRef.current?.showModal();
   const close = () => { dialogRef.current?.close(); setSoul(""); };
 
-  if (state?.ok) {
-    setTimeout(() => close(), 1600);
-  }
+  useEffect(() => {
+    if (!state?.ok) return;
+    const timer = setTimeout(() => close(), 1600);
+    return () => clearTimeout(timer);
+  }, [state?.ok]);
 
   return (
     <>

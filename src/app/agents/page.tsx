@@ -1,5 +1,5 @@
 import { getAgents } from "@/lib/data";
-import { dotClass, statusClass, initials, timeAgo } from "@/lib/utils";
+import { dotClass, initials, timeAgo } from "@/lib/utils";
 import { SpawnAgentButton } from "@/components/spawn-agent-form";
 import type { McRecord } from "@/lib/data";
 

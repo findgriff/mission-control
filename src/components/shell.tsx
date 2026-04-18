@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
@@ -10,6 +11,8 @@ const NAV = [
   { href: "/memory",   label: "Memory",   icon: MemoryIcon,  desc: "Indexed chunks" },
 ];
 
+const LOGO_SRC = "/mission-control/opspoket-official-logo.png";
+
 export async function Shell({ children }: { children: ReactNode }) {
   const hdrs = await headers();
   const pathname = hdrs.get("x-pathname") ?? "";
@@ -21,21 +24,23 @@ export async function Shell({ children }: { children: ReactNode }) {
         {/* Sidebar — hidden on mobile */}
         <aside className="sidebar">
           <div className="sidebar-inner">
-            {/* Logo mark */}
-            <div style={{ padding: "24px 20px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <div style={{
-                  width: 32, height: 32,
-                  background: "color-mix(in srgb, var(--red) 14%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--red) 40%, transparent)",
-                  borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <CrisisIcon />
-                </div>
-                <div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: "var(--red)" }}>MISSION CONTROL</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.05em" }}>OpenClaw</div>
-                </div>
+            {/* Logo */}
+            <div style={{ padding: "18px 18px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <Image
+                  src={LOGO_SRC}
+                  alt="OpsPoket Mission Control"
+                  width={1536}
+                  height={1024}
+                  priority
+                  style={{
+                    width: "100%",
+                    maxWidth: 176,
+                    height: "auto",
+                    display: "block",
+                    objectFit: "contain",
+                  }}
+                />
               </div>
             </div>
 
@@ -82,15 +87,19 @@ export async function Shell({ children }: { children: ReactNode }) {
           {/* Mobile header */}
           <header className="mobile-header">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 28, height: 28,
-                background: "color-mix(in srgb, var(--red) 14%, transparent)",
-                border: "1px solid color-mix(in srgb, var(--red) 35%, transparent)",
-                borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <CrisisIcon size={14} />
-              </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: "var(--red)" }}>MISSION CONTROL</div>
+              <Image
+                src={LOGO_SRC}
+                alt="OpsPoket Mission Control"
+                width={1536}
+                height={1024}
+                priority
+                style={{
+                  width: 132,
+                  height: "auto",
+                  display: "block",
+                  objectFit: "contain",
+                }}
+              />
             </div>
           </header>
 
@@ -199,15 +208,6 @@ function MemoryIcon({ size = 18, color = "currentColor" }: { size?: number; colo
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-    </svg>
-  );
-}
-
-function CrisisIcon({ size = 16, color = "var(--red)" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   );
 }

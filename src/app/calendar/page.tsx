@@ -1,5 +1,5 @@
 import { getCalendar } from "@/lib/data";
-import { statusClass, dotClass } from "@/lib/utils";
+import { statusClass } from "@/lib/utils";
 import type { McRecord } from "@/lib/data";
 
 export const dynamic = "force-dynamic";

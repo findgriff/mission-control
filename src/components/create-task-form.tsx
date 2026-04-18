@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createTask, type TaskActionState } from "@/actions";
 
 const PRIORITIES = [
@@ -22,9 +22,11 @@ function CreateTaskModal({ agents }: { agents: string[] }) {
   const open  = () => dialogRef.current?.showModal();
   const close = () => { dialogRef.current?.close(); setSelectedAgent(""); };
 
-  if (state?.ok) {
-    setTimeout(() => close(), 1400);
-  }
+  useEffect(() => {
+    if (!state?.ok) return;
+    const timer = setTimeout(() => close(), 1400);
+    return () => clearTimeout(timer);
+  }, [state?.ok]);
 
   return (
     <>
