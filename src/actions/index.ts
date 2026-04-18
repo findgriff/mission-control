@@ -77,15 +77,11 @@ export async function spawnAgent(
 ): Promise<AgentActionState> {
   const name  = (formData.get("name") as string | null)?.trim() ?? "";
   const role  = (formData.get("role") as string | null)?.trim() ?? "";
-  const soul  = (formData.get("soul") as string | null)?.trim() ?? "";
 
   if (!name) return { ok: false, error: "Name is required." };
   if (!role) return { ok: false, error: "Role is required." };
 
-  const args = ["agents", "new", name, "--role", role];
-  if (soul) args.push("--instructions", soul);
-
-  const result = await runClaw(args);
+  const result = await runClaw(["agents", "new", name, role]);
 
   if (result.ok) {
     revalidatePath("/agents");

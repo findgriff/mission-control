@@ -17,7 +17,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Added public health endpoint at `/mission-control/api/health`.
 - Added OpsPoket official logo asset at `public/opspoket-official-logo.png` and wired it into the desktop sidebar and mobile header.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
-- Fixed agent commissioning command to call only `openclaw agents new <name> --role <role>` and removed the invalid `--name` option entirely.
+- Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
 - Hardened project zip download path checks and excluded common secret/build/runtime files.
 - Fixed ESLint flat config and Next Turbopack root config.
 - Fixed React lint errors caused by closing modals from render instead of effects.

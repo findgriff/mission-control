@@ -1,16 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { spawnAgent, type AgentActionState } from "@/actions";
-
-const SOUL_PRESETS = [
-  { label: "Relentless",  soul: "Assumes nothing works until proven. Traces every call, questions every assumption. Ships only when certain." },
-  { label: "Architect",   soul: "Builds for simplicity first. Challenges complexity with a raised eyebrow. Designs what future engineers will thank." },
-  { label: "Guardian",    soul: "Trusts no input. Checks every boundary, every permission, every secret. Security is the foundation." },
-  { label: "Speedster",   soul: "Measures before optimising. Cares deeply about user-facing latency. Fast is a feature, not an afterthought." },
-  { label: "Tester",      soul: "Coverage is safety. Every edge case deserves a name. Breaks things on purpose so production never has to." },
-  { label: "Wordsmith",   soul: "Code is communication. Documentation is kindness. Writes for the engineer debugging at 2 am." },
-];
 
 export function SpawnAgentButton() {
   return <SpawnAgentModal />;
@@ -18,11 +9,10 @@ export function SpawnAgentButton() {
 
 function SpawnAgentModal() {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [soul, setSoul] = useState("");
   const [state, action, pending] = useActionState<AgentActionState, FormData>(spawnAgent, null);
 
   const open = () => dialogRef.current?.showModal();
-  const close = () => { dialogRef.current?.close(); setSoul(""); };
+  const close = () => { dialogRef.current?.close(); };
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -75,44 +65,6 @@ function SpawnAgentModal() {
                 <label className="label" htmlFor="agent-role">Role *</label>
                 <input id="agent-role" name="role" required className="input"
                   placeholder="Senior Code Reviewer, DevOps Specialist…" />
-              </div>
-
-              {/* Soul */}
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <label className="label" htmlFor="agent-soul" style={{ marginBottom: 0 }}>Soul</label>
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
-                    textTransform: "uppercase", color: "var(--purple)",
-                    padding: "1px 7px", borderRadius: 4,
-                    background: "color-mix(in srgb, var(--purple) 12%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--purple) 25%, transparent)",
-                  }}>personality</span>
-                </div>
-
-                {/* Preset pills */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-                  {SOUL_PRESETS.map((p) => (
-                    <button
-                      key={p.label}
-                      type="button"
-                      className="soul-pill"
-                      onClick={() => setSoul(p.soul)}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-
-                <textarea
-                  id="agent-soul"
-                  name="soul"
-                  value={soul}
-                  onChange={(e) => setSoul(e.target.value)}
-                  className="input"
-                  placeholder="Describe this agent's personality and approach…"
-                  rows={4}
-                />
               </div>
 
               {/* Feedback */}
