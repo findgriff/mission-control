@@ -113,12 +113,12 @@ function CalendarCard({ event }: { event: McRecord }) {
                 borderRadius: 5, color: "var(--amber)",
               }}>{expr}</code>
             )}
-            {event.scheduleKind && (
+            {!!event.scheduleKind && (
               <span className="badge" style={{ color: "var(--muted)", borderColor: "var(--border)", background: "transparent" }}>
                 {String(event.scheduleKind)}
               </span>
             )}
-            {event.agentId && (
+            {!!event.agentId && (
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>
                 → {String(event.agentId)}
               </span>
