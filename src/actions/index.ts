@@ -82,10 +82,17 @@ export async function spawnAgent(
   if (!name) return { ok: false, error: "Name is required." };
   if (!role) return { ok: false, error: "Role is required." };
 
-  const args = ["agents", "new", "--name", name, "--role", role];
-  if (soul) args.push("--instructions", soul);
+  const primaryArgs = ["agents", "new", name, "--role", role];
+  const legacyArgs = ["agents", "new", "--name", name, "--role", role];
+  if (soul) {
+    primaryArgs.push("--instructions", soul);
+    legacyArgs.push("--instructions", soul);
+  }
 
-  const result = await runClaw(args);
+  let result = await runClaw(primaryArgs);
+  if (!result.ok && /(?:missing|required).*--?name|--?name.*(?:missing|required)/i.test(result.output)) {
+    result = await runClaw(legacyArgs);
+  }
 
   if (result.ok) {
     revalidatePath("/agents");
