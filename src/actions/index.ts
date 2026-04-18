@@ -44,17 +44,11 @@ export async function createTask(
 ): Promise<TaskActionState> {
   const title       = (formData.get("title")       as string | null)?.trim() ?? "";
   const description = (formData.get("description") as string | null)?.trim() ?? "";
-  const priority    = (formData.get("priority")    as string | null)?.trim() ?? "medium";
-  const agentId     = (formData.get("agentId")     as string | null)?.trim() ?? "";
 
   if (!title) return { ok: false, error: "Title is required." };
 
-  const args = ["tasks", "create", title];
-  if (description) args.push("--description", description);
-  if (priority && priority !== "medium") args.push("--priority", priority);
-  if (agentId) args.push("--agent", agentId);
-
-  const result = await runClaw(args);
+  const task = description ? `${title}\n\n${description}` : title;
+  const result = await runClaw(["tasks", "create", task]);
 
   if (result.ok) {
     revalidatePath("/tasks");

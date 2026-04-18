@@ -1,26 +1,18 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { createTask, type TaskActionState } from "@/actions";
 
-const PRIORITIES = [
-  { key: "low",      label: "Low",      cls: "chip chip-muted" },
-  { key: "medium",   label: "Medium",   cls: "chip chip-cyan" },
-  { key: "high",     label: "High",     cls: "chip chip-amber" },
-  { key: "critical", label: "Critical", cls: "chip chip-red" },
-];
-
-export function CreateTaskButton({ agents = [] }: { agents?: string[] }) {
-  return <CreateTaskModal agents={agents} />;
+export function CreateTaskButton() {
+  return <CreateTaskModal />;
 }
 
-function CreateTaskModal({ agents }: { agents: string[] }) {
+function CreateTaskModal() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState<TaskActionState, FormData>(createTask, null);
-  const [selectedAgent, setSelectedAgent] = useState("");
 
   const open  = () => dialogRef.current?.showModal();
-  const close = () => { dialogRef.current?.close(); setSelectedAgent(""); };
+  const close = () => { dialogRef.current?.close(); };
 
   useEffect(() => {
     if (!state?.ok) return;
@@ -76,68 +68,6 @@ function CreateTaskModal({ agents }: { agents: string[] }) {
                   placeholder="Provide context for the agent…" rows={3} />
               </div>
 
-              {/* Agent picker */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <label className="label" htmlFor="task-agent" style={{ marginBottom: 0 }}>Assign to Agent</label>
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700,
-                    letterSpacing: "0.1em", textTransform: "uppercase",
-                    color: "var(--cyan)", padding: "1px 7px", borderRadius: 4,
-                    background: "color-mix(in srgb, var(--cyan) 12%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--cyan) 25%, transparent)",
-                  }}>optional</span>
-                </div>
-                {agents.length > 0 ? (
-                  <>
-                    {/* Agent pills */}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAgent("")}
-                        style={{
-                          fontFamily: "var(--font-mono)", fontSize: 11,
-                          padding: "4px 12px", borderRadius: 6, cursor: "pointer",
-                          background: selectedAgent === "" ? "color-mix(in srgb, var(--cyan) 15%, transparent)" : "var(--surface)",
-                          border: `1px solid ${selectedAgent === "" ? "color-mix(in srgb, var(--cyan) 40%, transparent)" : "var(--border)"}`,
-                          color: selectedAgent === "" ? "var(--cyan)" : "var(--muted)",
-                          fontWeight: selectedAgent === "" ? 700 : 400,
-                        }}
-                      >
-                        Default
-                      </button>
-                      {agents.map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setSelectedAgent(id)}
-                          style={{
-                            fontFamily: "var(--font-mono)", fontSize: 11,
-                            padding: "4px 12px", borderRadius: 6, cursor: "pointer",
-                            background: selectedAgent === id ? "color-mix(in srgb, var(--cyan) 15%, transparent)" : "var(--surface)",
-                            border: `1px solid ${selectedAgent === id ? "color-mix(in srgb, var(--cyan) 40%, transparent)" : "var(--border)"}`,
-                            color: selectedAgent === id ? "var(--cyan)" : "var(--muted)",
-                            fontWeight: selectedAgent === id ? 700 : 400,
-                          }}
-                        >
-                          {id}
-                        </button>
-                      ))}
-                    </div>
-                    <input type="hidden" name="agentId" value={selectedAgent} />
-                  </>
-                ) : (
-                  <input id="task-agent" name="agentId" className="input"
-                    placeholder="Agent ID (leave blank for default)" />
-                )}
-              </div>
-
-              {/* Priority */}
-              <div style={{ marginBottom: 24 }}>
-                <label className="label">Priority</label>
-                <PriorityPicker />
-              </div>
-
               {/* Feedback */}
               {state?.error && (
                 <div style={{
@@ -167,7 +97,7 @@ function CreateTaskModal({ agents }: { agents: string[] }) {
                 {pending ? (
                   <><span className="spin" style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #fff4", borderTopColor: "#fff", borderRadius: "50%" }} /> Launching…</>
                 ) : (
-                  <><RocketIcon /> Launch Task{selectedAgent ? ` → ${selectedAgent}` : ""}</>
+                  <><RocketIcon /> Launch Task</>
                 )}
               </button>
             </form>
@@ -175,29 +105,6 @@ function CreateTaskModal({ agents }: { agents: string[] }) {
         </div>
       </dialog>
     </>
-  );
-}
-
-function PriorityPicker() {
-  return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-      {PRIORITIES.map((p, i) => (
-        <label key={p.key} style={{ cursor: "pointer" }}>
-          <input type="radio" name="priority" value={p.key} defaultChecked={i === 1}
-            style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
-            onChange={(e) => {
-              const parent = e.currentTarget.closest("div");
-              if (!parent) return;
-              parent.querySelectorAll("[data-active]").forEach((el) => el.setAttribute("data-active", "false"));
-              e.currentTarget.nextElementSibling?.setAttribute("data-active", "true");
-            }}
-          />
-          <span className={p.cls} data-active={i === 1 ? "true" : "false"}>
-            {p.label}
-          </span>
-        </label>
-      ))}
-    </div>
   );
 }
 

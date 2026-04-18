@@ -18,6 +18,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Added OpsPoket official logo asset at `public/opspoket-official-logo.png` and wired it into the desktop sidebar and mobile header.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
 - Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
+- Fixed task creation command to call only `openclaw tasks create <task>` and removed unsupported task creation flags from the UI path.
 - Hardened project zip download path checks and excluded common secret/build/runtime files.
 - Fixed ESLint flat config and Next Turbopack root config.
 - Fixed React lint errors caused by closing modals from render instead of effects.
@@ -46,6 +47,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - `npm run build` passed.
 - Logo smoke check passed: optimized Next image route for the OpsPoket logo returns `200 image/png`.
 - Agent commissioning command fix validated with `npm run lint` and `npm run build`; live VPS CLI still needs final confirmation because `openclaw` is not installed locally.
+- Task creation command fix validated with `npm run lint` and `npm run build`; live VPS CLI still needs final confirmation because `openclaw` is not installed locally.
 - Local production smoke test passed for:
   - `GET /mission-control/api/health` returns 200.
   - `GET /mission-control/tasks` returns 200 without app-level login, with sanitized missing-runtime error because local machine does not have the target OpenClaw SQLite database.

@@ -1,4 +1,4 @@
-import { getTasks, getAgents } from "@/lib/data";
+import { getTasks } from "@/lib/data";
 import { statusClass, dotClass, timeAgo } from "@/lib/utils";
 import { CreateTaskButton } from "@/components/create-task-form";
 import type { McRecord } from "@/lib/data";
@@ -10,9 +10,8 @@ export default async function TasksPage({
 }: {
   searchParams?: Promise<{ q?: string; filter?: string }>;
 }) {
-  const [{ items, error, source }, { items: agentItems }, params] = await Promise.all([
+  const [{ items, error, source }, params] = await Promise.all([
     getTasks(),
-    getAgents(),
     searchParams,
   ]);
 
@@ -76,7 +75,7 @@ export default async function TasksPage({
       </div>
 
       {/* FAB */}
-      <CreateTaskButton agents={agentItems.map((a) => a.id)} />
+      <CreateTaskButton />
     </>
   );
 }
