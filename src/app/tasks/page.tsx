@@ -88,6 +88,8 @@ function TaskCard({ task }: { task: McRecord }) {
   const agentId         = String(task.agentId         ?? "");
   const error           = String(task.error           ?? "");
   const terminalSummary = String(task.terminalSummary ?? "");
+  const startedAt       = String(task.startedAt       ?? "");
+  const createdAt       = String(task.createdAt ?? task.lastEventAt ?? "");
   return (
     <div className="card fade-up" style={{ padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -117,12 +119,12 @@ function TaskCard({ task }: { task: McRecord }) {
             )}
             <span style={{ flex: 1 }} />
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--dim)" }}>
-              {timeAgo(String(task.createdAt ?? task.lastEventAt ?? ""))}
+              {timeAgo(createdAt)}
             </span>
           </div>
 
           {/* Agent + duration */}
-          {(agentId || task.startedAt) && (
+          {(agentId || startedAt) && (
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6 }}>
               {agentId && (
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}>
