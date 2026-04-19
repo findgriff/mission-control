@@ -9,8 +9,7 @@ const NAV = [
   { href: "/projects", label: "Projects", icon: FolderIcon,  desc: "Workspace repos" },
   { href: "/calendar", label: "Schedule", icon: ClockIcon,   desc: "Cron events" },
   { href: "/memory",   label: "Memory",   icon: MemoryIcon,  desc: "Indexed chunks" },
-  { href: "/terminal", label: "Terminal", icon: TerminalIcon, desc: "Host shell" },
-  { href: "/bridge",   label: "Bridge",   icon: BridgeIcon,   desc: "Agent jobs" },
+  { href: "/bridge",   label: "Bridge",   icon: BridgeIcon,   desc: "MCP hub" },
 ];
 
 const LOGO_SRC = "/mission-control/opspoket-official-logo.png";
@@ -210,16 +209,6 @@ function MemoryIcon({ size = 18, color = "currentColor" }: { size?: number; colo
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-    </svg>
-  );
-}
-
-function TerminalIcon({ size = 18, color = "currentColor" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M7 9l3 3-3 3" />
-      <path d="M13 15h4" />
     </svg>
   );
 }

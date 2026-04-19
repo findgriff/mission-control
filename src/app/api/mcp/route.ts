@@ -3,6 +3,14 @@ import { executeTool, TOOL_DEFINITIONS } from "@/lib/bridge-tools";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// ── CORS headers ───────────────────────────────────────────────────────────────
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+};
+
 // ── JSON-RPC types ─────────────────────────────────────────────────────────────
 
 interface JsonRpcRequest {
@@ -13,7 +21,10 @@ interface JsonRpcRequest {
 }
 
 function jsonRpcOk(id: string | number | null, result: unknown): Response {
-  return Response.json({ jsonrpc: "2.0", id, result });
+  return Response.json(
+    { jsonrpc: "2.0", id, result },
+    { headers: CORS_HEADERS }
+  );
 }
 
 function jsonRpcError(
@@ -21,18 +32,40 @@ function jsonRpcError(
   code: number,
   message: string
 ): Response {
-  return Response.json({ jsonrpc: "2.0", id, error: { code, message } });
+  return Response.json(
+    { jsonrpc: "2.0", id, error: { code, message } },
+    { headers: CORS_HEADERS }
+  );
 }
 
-// ── GET — capability discovery ─────────────────────────────────────────────────
+// ── OPTIONS — CORS preflight ───────────────────────────────────────────────────
 
-export async function GET(): Promise<Response> {
-  return Response.json({
-    name: "mission-control",
-    version: "2.0.0",
-    description: "Mission Control MCP server — tools for reading MC data and operating the OpenClaw VPS.",
-    protocolVersion: "2024-11-05",
-    capabilities: { tools: {} },
+export async function OPTIONS(): Promise<Response> {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
+// ── GET — SSE stream (MCP Streamable HTTP transport) ──────────────────────────
+
+export async function GET(request: Request): Promise<Response> {
+  const postUrl = new URL(request.url).toString();
+
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send the endpoint event as required by MCP Streamable HTTP spec
+      controller.enqueue(
+        new TextEncoder().encode(`event: endpoint\ndata: ${postUrl}\n\n`)
+      );
+      // Keep the stream open — clients hold this connection for server-sent events
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 }
 
@@ -55,6 +88,12 @@ export async function POST(request: Request): Promise<Response> {
         capabilities: { tools: {} },
         serverInfo: { name: "mission-control", version: "2.0.0" },
       });
+
+    case "notifications/initialized":
+      return jsonRpcOk(id, {});
+
+    case "ping":
+      return jsonRpcOk(id, {});
 
     case "tools/list":
       return jsonRpcOk(id, {
