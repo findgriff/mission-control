@@ -16,6 +16,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Removed app-level Basic Auth from `src/proxy.ts`; access control is expected to be handled by VPS networking, VPN, SSH tunnel, firewall, or reverse proxy controls.
 - Added public health endpoint at `/mission-control/api/health`.
 - Added OpsPoket official logo asset at `public/opspoket-official-logo.png` and wired it into the desktop sidebar and mobile header.
+- Added `/terminal` with an unrestricted shell command runner backed by `/api/terminal`; it is disabled unless `MISSION_CONTROL_TERMINAL_ENABLED=true`.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
 - Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
 - Fixed task creation command to call only `openclaw tasks create <task>` and removed unsupported task creation flags from the UI path.
@@ -37,6 +38,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Add integration tests with seeded OpenClaw SQLite/JSON fixtures.
 - Add audit logging for task creation, agent commissioning, project downloads, and auth failures.
 - Keep the service bound to localhost or behind a hardened VPS access boundary before exposing it beyond trusted operators.
+- Terminal executes commands as the Mission Control service user when enabled. Do not enable it on an untrusted network.
 - Add a real installer/upgrade path, systemd unit, reverse proxy template, backup/restore procedure, release notes, and license.
 - Validate on the actual VPS where `/home/clawd/.openclaw` and the `openclaw` CLI exist.
 

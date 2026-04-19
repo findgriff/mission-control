@@ -24,6 +24,8 @@ npm run build
 
 Mission Control does not include an app-level login. Keep the Node service bound to `127.0.0.1` and expose it only through your intended VPS access boundary, such as a private admin domain, VPN, SSH tunnel, firewall allowlist, or reverse proxy authentication.
 
+The terminal page runs unrestricted shell commands as the service user when `MISSION_CONTROL_TERMINAL_ENABLED=true`. Leave it disabled unless that access boundary is trusted.
+
 ## Runtime Contract
 
 The service account must be able to:
