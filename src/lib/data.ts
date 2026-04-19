@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { getOpenProjects } from "@/lib/projects";
@@ -9,7 +9,7 @@ const execFileAsync = promisify(execFile);
 const OPENCLAW_HOME = process.env.OPENCLAW_HOME ?? "/home/clawd/.openclaw";
 const TASKS_DB = process.env.OPENCLAW_TASKS_DB ?? path.join(OPENCLAW_HOME, "tasks/runs.sqlite");
 const MEMORY_DB = process.env.OPENCLAW_MEMORY_DB ?? path.join(OPENCLAW_HOME, "memory/main.sqlite");
-const SESSIONS = process.env.OPENCLAW_SESSIONS_FILE ?? path.join(OPENCLAW_HOME, "agents/main/sessions/sessions.json");
+const AGENTS_DIR = path.join(OPENCLAW_HOME, "agents");
 const CONFIG = process.env.OPENCLAW_CONFIG_FILE ?? path.join(OPENCLAW_HOME, "openclaw.json");
 const CRON = process.env.OPENCLAW_CRON_FILE ?? path.join(OPENCLAW_HOME, "cron/jobs.json");
 
@@ -93,43 +93,56 @@ type ClawConfig   = { agents?: { list?: Array<{ id?: string }> } };
 
 export async function getAgents(): Promise<McCollection> {
   try {
-    const [sessions, config] = await Promise.all([
-      readJson<SessionsFile>(SESSIONS),
-      readJson<ClawConfig>(CONFIG),
-    ]);
+    // Each agent stores its own sessions.json under agents/<id>/sessions/sessions.json.
+    // Scan all agent directories and merge every sessions file into one view.
+    const agentDirs = await readdir(AGENTS_DIR).catch(() => [] as string[]);
 
+    const sessionFiles = await Promise.all(
+      agentDirs.map(async (dir) => {
+        const file = path.join(AGENTS_DIR, dir, "sessions", "sessions.json");
+        try {
+          return { agentDir: dir, data: await readJson<SessionsFile>(file) };
+        } catch {
+          return { agentDir: dir, data: {} as SessionsFile };
+        }
+      })
+    );
+
+    const config = await readJson<ClawConfig>(CONFIG).catch(() => ({} as ClawConfig));
     const grouped = new Map<string, McRecord & { _latestMs?: number }>();
 
-    for (const [key, entry] of Object.entries(sessions)) {
-      const parts = key.split(":");
-      if (parts.length < 2) continue;
-      const agentId = parts[1] || "unknown";
-      const existing = grouped.get(agentId) ?? {
-        id: agentId, title: agentId,
-        sessionCount: 0, sessionKeys: [],
-        channels: [], chatTypes: [], statuses: [], models: [],
-      };
+    for (const { agentDir, data } of sessionFiles) {
+      for (const [key, entry] of Object.entries(data)) {
+        // Key format: "agent:<agentId>:<sessionId>" — use agentDir as the stable id
+        const agentId = agentDir;
+        const existing = grouped.get(agentId) ?? {
+          id: agentId, title: agentId,
+          sessionCount: 0, sessionKeys: [],
+          channels: [], chatTypes: [], statuses: [], models: [],
+        };
 
-      (existing.sessionCount as number)++;
-      pushUnique(existing.sessionKeys, key);
-      pushUnique(existing.channels, entry.lastChannel ?? entry.origin?.provider);
-      pushUnique(existing.chatTypes, entry.chatType ?? entry.origin?.chatType);
-      pushUnique(existing.statuses, entry.status);
-      pushUnique(existing.models, compact([entry.modelProvider, entry.model], "/"));
+        (existing.sessionCount as number)++;
+        pushUnique(existing.sessionKeys, key);
+        pushUnique(existing.channels, entry.lastChannel ?? entry.origin?.provider);
+        pushUnique(existing.chatTypes, entry.chatType ?? entry.origin?.chatType);
+        pushUnique(existing.statuses, entry.status);
+        pushUnique(existing.models, compact([entry.modelProvider, entry.model], "/"));
 
-      if (typeof entry.updatedAt === "number" && entry.updatedAt > (existing._latestMs ?? 0)) {
-        existing._latestMs = entry.updatedAt;
-        existing.latestUpdatedAt = fmtMs(entry.updatedAt);
-        existing.latestStatus = entry.status;
-        existing.lastChannel = entry.lastChannel ?? entry.origin?.provider;
-        existing.model = compact([entry.modelProvider, entry.model], "/");
+        if (typeof entry.updatedAt === "number" && entry.updatedAt > (existing._latestMs ?? 0)) {
+          existing._latestMs = entry.updatedAt;
+          existing.latestUpdatedAt = fmtMs(entry.updatedAt);
+          existing.latestStatus = entry.status;
+          existing.lastChannel = entry.lastChannel ?? entry.origin?.provider;
+          existing.model = compact([entry.modelProvider, entry.model], "/");
+        }
+        grouped.set(agentId, existing);
       }
-      grouped.set(agentId, existing);
     }
 
+    // Add any configured agents that have no sessions yet
     for (const a of config.agents?.list ?? []) {
       if (a.id && !grouped.has(a.id)) {
-        grouped.set(a.id, { id: a.id, title: a.id, configured: true });
+        grouped.set(a.id, { id: a.id, title: a.id, configured: true, sessionCount: 0 });
       }
     }
 
@@ -139,11 +152,11 @@ export async function getAgents(): Promise<McCollection> {
     });
 
     return {
-      source: "sessions.json",
+      source: AGENTS_DIR,
       items: records.sort((a, b) => a.title.localeCompare(b.title)),
     };
   } catch (e) {
-    return errCollection("sessions.json", e);
+    return errCollection("agents/**/sessions.json", e);
   }
 }
 
