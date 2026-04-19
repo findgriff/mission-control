@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Provider = "openai" | "anthropic" | "ollama" | "custom";
+type Provider = "openai" | "anthropic" | "ollama" | "google" | "custom";
 
 type BridgeEvent =
   | { type: "start"; model: string; provider: string; timestamp: string }
@@ -20,10 +20,11 @@ type Status = "idle" | "connecting" | "running" | "done" | "error";
 // ── Provider presets ───────────────────────────────────────────────────────────
 
 const PROVIDER_PRESETS: Record<Provider, { endpoint: string; model: string; needsKey: boolean }> = {
-  ollama:    { endpoint: "http://localhost:11434", model: "llama3.2",        needsKey: false },
-  openai:    { endpoint: "https://api.openai.com",  model: "gpt-4o",          needsKey: true  },
-  anthropic: { endpoint: "https://api.anthropic.com", model: "claude-opus-4-5", needsKey: true  },
-  custom:    { endpoint: "",                         model: "",               needsKey: false },
+  ollama:    { endpoint: "http://localhost:11434",                                  model: "llama3.2",           needsKey: false },
+  openai:    { endpoint: "https://api.openai.com",                                  model: "gpt-4o",             needsKey: true  },
+  anthropic: { endpoint: "https://api.anthropic.com",                               model: "claude-opus-4-5",    needsKey: true  },
+  google:    { endpoint: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.0-flash",   needsKey: true  },
+  custom:    { endpoint: "",                                                          model: "",                  needsKey: false },
 };
 
 // ── Truncate result ────────────────────────────────────────────────────────────
@@ -418,6 +419,7 @@ export function BridgeCockpit() {
                 onChange={(e) => handleProviderChange(e.target.value as Provider)}
               >
                 <option value="ollama">Ollama (local)</option>
+                <option value="google">Google Gemini</option>
                 <option value="openai">OpenAI</option>
                 <option value="anthropic">Anthropic</option>
                 <option value="custom">Custom / LM Studio</option>

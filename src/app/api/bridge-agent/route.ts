@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Provider = "openai" | "anthropic" | "ollama" | "custom";
+type Provider = "openai" | "anthropic" | "ollama" | "google" | "custom";
 
 interface BridgeAgentRequest {
   provider: Provider;
