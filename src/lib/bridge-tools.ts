@@ -1,4 +1,4 @@
-import { exec, execFile } from "node:child_process";
+import { exec, execFile, spawn } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -143,17 +143,25 @@ async function toolCreateTask(args: Record<string, unknown>): Promise<ToolResult
   const message = typeof args.message === "string" ? args.message.trim() : "";
   if (!message) return fail("message is required.");
 
-  try {
-    const { stdout, stderr } = await execFileAsync(
-      "openclaw",
-      ["agent", "--message", message],
-      { env: bridgeEnv(), timeout: 30_000, maxBuffer: 1024 * 512 }
-    );
-    return ok((stdout || stderr).trim() || "Task queued.");
-  } catch (e: unknown) {
-    const err = e as { stderr?: string; message?: string };
-    return fail(err.stderr?.trim() || err.message || "Failed to create task.");
-  }
+  // Fire-and-forget: `openclaw agent` can take minutes to complete an agent turn.
+  // Spawn detached + unref so the process outlives this request, then return immediately.
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(
+        "openclaw",
+        ["agent", "--message", message],
+        {
+          detached: true,
+          stdio: "ignore",
+          env: bridgeEnv(),
+        }
+      );
+      child.unref();
+      resolve(ok(`Task dispatched to agent. Message: "${message.slice(0, 80)}${message.length > 80 ? "…" : ""}"`));
+    } catch (e) {
+      resolve(fail(`Failed to dispatch task: ${e instanceof Error ? e.message : String(e)}`));
+    }
+  });
 }
 
 async function toolCommissionAgent(args: Record<string, unknown>): Promise<ToolResult> {

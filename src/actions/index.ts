@@ -1,6 +1,6 @@
 "use server";
 
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { revalidatePath } from "next/cache";
 
@@ -47,16 +47,24 @@ export async function createTask(
 
   if (!title) return { ok: false, error: "Title is required." };
 
-  // openclaw tasks has no "create" subcommand — tasks are created by sending
-  // a message to the agent via `openclaw agent --message <text>`
+  // `openclaw agent --message` can take minutes to complete an agent turn.
+  // Fire-and-forget with a detached process so the HTTP request returns fast.
   const message = description ? `${title}\n\n${description}` : title;
-  const result = await runClaw(["agent", "--message", message]);
 
-  if (result.ok) {
-    revalidatePath("/tasks");
-    return { ok: true, output: result.output || "Task queued." };
-  }
-  return { ok: false, error: result.output || "Failed to create task." };
+  return new Promise((resolve) => {
+    try {
+      const child = spawn("openclaw", ["agent", "--message", message], {
+        detached: true,
+        stdio: "ignore",
+        env: CLAW_ENV,
+      });
+      child.unref();
+      revalidatePath("/tasks");
+      resolve({ ok: true, output: "Task dispatched to agent." });
+    } catch (e) {
+      resolve({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
 }
 
 // ── Spawn Agent ────────────────────────────────────────────────────────────────
