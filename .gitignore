@@ -23,6 +23,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.agent/runs/
+.agent/inbox/current-task.md
 
 # typescript
 *.tsbuildinfo

@@ -10,6 +10,7 @@ const NAV = [
   { href: "/calendar", label: "Schedule", icon: ClockIcon,   desc: "Cron events" },
   { href: "/memory",   label: "Memory",   icon: MemoryIcon,  desc: "Indexed chunks" },
   { href: "/terminal", label: "Terminal", icon: TerminalIcon, desc: "Host shell" },
+  { href: "/bridge",   label: "Bridge",   icon: BridgeIcon,   desc: "Agent jobs" },
 ];
 
 const LOGO_SRC = "/mission-control/opspoket-official-logo.png";
@@ -219,6 +220,16 @@ function TerminalIcon({ size = 18, color = "currentColor" }: { size?: number; co
       <rect x="3" y="4" width="18" height="16" rx="2" />
       <path d="M7 9l3 3-3 3" />
       <path d="M13 15h4" />
+    </svg>
+  );
+}
+
+function BridgeIcon({ size = 18, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 7h10v10H7z" />
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+      <path d="M9.5 9.5h5v5h-5z" />
     </svg>
   );
 }

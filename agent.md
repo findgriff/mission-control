@@ -17,6 +17,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Added public health endpoint at `/mission-control/api/health`.
 - Added OpsPoket official logo asset at `public/opspoket-official-logo.png` and wired it into the desktop sidebar and mobile header.
 - Added `/terminal` with an unrestricted shell command runner backed by `/api/terminal`; it is enabled by default and can be disabled with `MISSION_CONTROL_TERMINAL_ENABLED=false`.
+- Added `/bridge` with a Codex CLI and shell runner backed by `/api/bridge`; it writes `.agent/inbox/current-task.md`, `.agent/runs/*.log`, and `.agent/runs/*.json` in the configured bridge working directory.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
 - Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
 - Fixed task creation command to call only `openclaw tasks create <task>` and removed unsupported task creation flags from the UI path.
@@ -39,6 +40,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Add audit logging for task creation, agent commissioning, project downloads, and auth failures.
 - Keep the service bound to localhost or behind a hardened VPS access boundary before exposing it beyond trusted operators.
 - Terminal executes commands as the Mission Control service user when enabled. Do not enable it on an untrusted network.
+- Bridge executes Codex CLI or shell jobs as the Mission Control service user. Codex jobs require the `codex` CLI to be installed and authenticated for that user.
 - Add a real installer/upgrade path, systemd unit, reverse proxy template, backup/restore procedure, release notes, and license.
 - Validate on the actual VPS where `/home/clawd/.openclaw` and the `openclaw` CLI exist.
 
@@ -53,6 +55,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Local production smoke test passed for:
   - `GET /mission-control/api/health` returns 200.
   - `GET /mission-control/tasks` returns 200 without app-level login, with sanitized missing-runtime error because local machine does not have the target OpenClaw SQLite database.
+- Bridge local validation passed: `POST /mission-control/api/bridge` with shell command `pwd && echo bridge-ok` returned 200 and wrote `.agent/inbox/current-task.md`, `.agent/runs/*.log`, and `.agent/runs/*.json`; `GET /mission-control/bridge` rendered bridge UI text.
 - Known gap: no automated tests exist.
 
 ## Handover Log
@@ -61,3 +64,7 @@ Use this file to keep a running handover for future agents working in this repo.
 
 - Added this handover file so future agents can understand what has happened and what changed.
 - Audited repo for production readiness. Verdict: not ready for sale; closer to internal testing after hardening.
+
+### 2026-04-19
+
+- Added Mission Control bridge for running Codex CLI or shell repair jobs from the UI. Default runner is Codex CLI using `codex exec --full-auto <prompt>`; shell runner executes the supplied command through the service user's shell.
