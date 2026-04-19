@@ -47,12 +47,14 @@ export async function createTask(
 
   if (!title) return { ok: false, error: "Title is required." };
 
-  const task = description ? `${title}\n\n${description}` : title;
-  const result = await runClaw(["tasks", "create", task]);
+  // openclaw tasks has no "create" subcommand — tasks are created by sending
+  // a message to the agent via `openclaw agent --message <text>`
+  const message = description ? `${title}\n\n${description}` : title;
+  const result = await runClaw(["agent", "--message", message]);
 
   if (result.ok) {
     revalidatePath("/tasks");
-    return { ok: true, output: result.output || "Task created." };
+    return { ok: true, output: result.output || "Task queued." };
   }
   return { ok: false, error: result.output || "Failed to create task." };
 }
@@ -75,9 +77,27 @@ export async function spawnAgent(
   if (!name) return { ok: false, error: "Name is required." };
   if (!role) return { ok: false, error: "Role is required." };
 
-  const result = await runClaw(["agents", "new", name, role]);
+  // `openclaw agents new` does not exist — correct command is `agents add`
+  // with --non-interactive (requires --workspace).
+  const slug      = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const workspace = `${OPENCLAW_USER_HOME}/.openclaw/workspace-${slug}`;
+
+  // Ensure workspace dir exists before passing it to openclaw
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  try { await mkdir(workspace, { recursive: true }); } catch { /* already exists */ }
+
+  const result = await runClaw([
+    "agents", "add", name,
+    "--non-interactive",
+    "--workspace", workspace,
+  ]);
 
   if (result.ok) {
+    // Write the role as SOUL.md so the agent has its personality/instructions
+    try {
+      await writeFile(`${workspace}/SOUL.md`, `# SOUL.md — ${name}\n\n${role}\n`, "utf8");
+    } catch { /* non-fatal — agent exists, soul write failed silently */ }
+
     revalidatePath("/agents");
     return { ok: true, output: result.output || `Agent "${name}" commissioned.` };
   }
