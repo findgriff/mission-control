@@ -48,7 +48,7 @@ export async function runBridge(raw: BridgeRunRequest): Promise<BridgeRunResult>
   const cwdInput = typeof raw.cwd === "string" ? raw.cwd.trim() : "";
   const model = typeof raw.model === "string" && raw.model.trim()
     ? raw.model.trim()
-    : process.env.MISSION_CONTROL_CODEX_MODEL || "gpt-5.1-codex-mini";
+    : process.env.MISSION_CONTROL_CODEX_MODEL || "gpt-5.2";
   const codexMode = raw.codexMode === "full-auto" ? "full-auto" : "unrestricted";
   const cwd = cwdInput || process.env.MISSION_CONTROL_BRIDGE_CWD || process.env.MISSION_CONTROL_TERMINAL_CWD || process.cwd();
   const id = createRunId();
