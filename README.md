@@ -9,7 +9,7 @@ Server-side Mission Control dashboard for an OpenClaw/OpsPocket VPS. The current
 - Projects: lists local workspace projects and can stream a zipped project directory for download.
 - Schedule: reads OpenClaw cron job state.
 - Memory: reads indexed memory chunks from the OpenClaw memory SQLite database.
-- Terminal: runs unrestricted shell commands when `MISSION_CONTROL_TERMINAL_ENABLED=true`.
+- Terminal: runs unrestricted shell commands as the Mission Control service user.
 - Health: exposes `GET /mission-control/api/health` for uptime checks.
 - Access control: no app-level login. Restrict access at the VPS, firewall, VPN, SSH tunnel, or reverse proxy layer.
 
@@ -46,7 +46,7 @@ Production variables:
 
 Optional runtime file overrides are documented in `.env.example`.
 
-The terminal page is disabled unless `MISSION_CONTROL_TERMINAL_ENABLED=true`. When enabled, it executes unrestricted shell commands as the Mission Control service user.
+The terminal page is enabled by default and executes unrestricted shell commands as the Mission Control service user. Set `MISSION_CONTROL_TERMINAL_ENABLED=false` to disable it.
 
 ## Development
 

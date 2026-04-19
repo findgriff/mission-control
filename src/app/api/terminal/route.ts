@@ -12,7 +12,7 @@ type TerminalRequest = {
 };
 
 export async function POST(request: Request) {
-  if (process.env.MISSION_CONTROL_TERMINAL_ENABLED !== "true") {
+  if (process.env.MISSION_CONTROL_TERMINAL_ENABLED === "false") {
     return Response.json({ ok: false, error: "Terminal is disabled." }, { status: 404 });
   }
 

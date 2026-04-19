@@ -3,7 +3,7 @@ import { TerminalConsole } from "@/components/terminal-console";
 export const dynamic = "force-dynamic";
 
 export default function TerminalPage() {
-  const enabled = process.env.MISSION_CONTROL_TERMINAL_ENABLED === "true";
+  const enabled = process.env.MISSION_CONTROL_TERMINAL_ENABLED !== "false";
   const defaultCwd = process.env.MISSION_CONTROL_TERMINAL_CWD ?? process.cwd();
 
   return (
@@ -14,7 +14,7 @@ export default function TerminalPage() {
         <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
           {enabled
             ? "Run shell commands on this Mission Control host."
-            : "Terminal is disabled. Set MISSION_CONTROL_TERMINAL_ENABLED=true on the server."}
+            : "Terminal is disabled by MISSION_CONTROL_TERMINAL_ENABLED=false."}
         </p>
       </div>
 
