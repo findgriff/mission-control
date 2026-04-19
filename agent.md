@@ -18,6 +18,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Added OpsPoket official logo asset at `public/opspoket-official-logo.png` and wired it into the desktop sidebar and mobile header.
 - Added `/terminal` with an unrestricted shell command runner backed by `/api/terminal`; it is enabled by default and can be disabled with `MISSION_CONTROL_TERMINAL_ENABLED=false`.
 - Added `/bridge` with a Codex CLI and shell runner backed by `/api/bridge`; it writes `.agent/inbox/current-task.md`, `.agent/runs/*.log`, and `.agent/runs/*.json` in the configured bridge working directory.
+- Updated bridge Codex runner to pass an explicit model. Default is `gpt-5.1-codex-mini` through `MISSION_CONTROL_CODEX_MODEL`, avoiding broken Codex CLI defaults such as unsupported `gpt-5.2-codex`.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
 - Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
 - Fixed task creation command to call only `openclaw tasks create <task>` and removed unsupported task creation flags from the UI path.
@@ -67,4 +68,4 @@ Use this file to keep a running handover for future agents working in this repo.
 
 ### 2026-04-19
 
-- Added Mission Control bridge for running Codex CLI or shell repair jobs from the UI. Default runner is Codex CLI using `codex exec --full-auto <prompt>`; shell runner executes the supplied command through the service user's shell.
+- Added Mission Control bridge for running Codex CLI or shell repair jobs from the UI. Default runner is Codex CLI using an explicit model and unrestricted Codex CLI mode; shell runner executes the supplied command through the service user's shell.

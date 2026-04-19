@@ -45,6 +45,7 @@ Production variables:
 - `MISSION_CONTROL_TERMINAL_ENABLED`
 - `MISSION_CONTROL_TERMINAL_CWD`
 - `MISSION_CONTROL_BRIDGE_CWD`
+- `MISSION_CONTROL_CODEX_MODEL`
 - `MISSION_CONTROL_BRIDGE_TIMEOUT_MS`
 - `MISSION_CONTROL_BRIDGE_MAX_BUFFER`
 
@@ -52,7 +53,7 @@ Optional runtime file overrides are documented in `.env.example`.
 
 The terminal page is enabled by default and executes unrestricted shell commands as the Mission Control service user. Set `MISSION_CONTROL_TERMINAL_ENABLED=false` to disable it.
 
-The bridge page can run `codex exec --full-auto` or raw shell commands from the browser. It writes `.agent/inbox/current-task.md` and `.agent/runs/*` in the configured bridge working directory.
+The bridge page can run Codex CLI or raw shell commands from the browser. Codex runs default to `MISSION_CONTROL_CODEX_MODEL` and unrestricted Codex CLI mode. It writes `.agent/inbox/current-task.md` and `.agent/runs/*` in the configured bridge working directory.
 
 ## Development
 

@@ -26,7 +26,7 @@ Mission Control does not include an app-level login. Keep the Node service bound
 
 The terminal page is enabled by default and runs unrestricted shell commands as the service user. Set `MISSION_CONTROL_TERMINAL_ENABLED=false` to disable it.
 
-The bridge page runs Codex CLI or shell repair jobs from `MISSION_CONTROL_BRIDGE_CWD` and writes handoff files under `.agent/`. Codex CLI jobs require a working `codex` installation for the service user.
+The bridge page runs Codex CLI or shell repair jobs from `MISSION_CONTROL_BRIDGE_CWD` and writes handoff files under `.agent/`. Codex CLI jobs require a working `codex` installation for the service user. Set `MISSION_CONTROL_CODEX_MODEL` to a model supported by that authenticated Codex account, for example `gpt-5.1-codex-mini`.
 
 ## Runtime Contract
 

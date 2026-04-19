@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type BridgeRunner = "codex" | "shell";
+type CodexMode = "unrestricted" | "full-auto";
 
 type BridgeResult = {
   ok?: boolean;
@@ -11,6 +12,8 @@ type BridgeResult = {
   cwd?: string;
   command?: string;
   prompt?: string;
+  model?: string;
+  codexMode?: CodexMode;
   stdout?: string;
   stderr?: string;
   error?: string;
@@ -24,8 +27,10 @@ type BridgeResult = {
   };
 };
 
-export function BridgeConsole({ defaultCwd }: { defaultCwd: string }) {
+export function BridgeConsole({ defaultCwd, defaultModel }: { defaultCwd: string; defaultModel: string }) {
   const [runner, setRunner] = useState<BridgeRunner>("codex");
+  const [model, setModel] = useState(defaultModel);
+  const [codexMode, setCodexMode] = useState<CodexMode>("unrestricted");
   const [cwd, setCwd] = useState(defaultCwd);
   const [prompt, setPrompt] = useState("Inspect this repo, run validation, and summarize the current Mission Control status.");
   const [command, setCommand] = useState("git status -sb && npm run build");
@@ -39,7 +44,7 @@ export function BridgeConsole({ defaultCwd }: { defaultCwd: string }) {
       const response = await fetch("/mission-control/api/bridge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ runner, cwd, prompt, command }),
+        body: JSON.stringify({ runner, cwd, prompt, command, model, codexMode }),
       });
       const payload = (await response.json()) as BridgeResult;
       setResult(payload);
@@ -67,6 +72,32 @@ export function BridgeConsole({ defaultCwd }: { defaultCwd: string }) {
           <option value="codex">Codex CLI</option>
           <option value="shell">Shell command</option>
         </select>
+
+        {runner === "codex" && (
+          <>
+            <label className="label" htmlFor="bridge-model">Codex Model</label>
+            <input
+              id="bridge-model"
+              className="input"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              spellCheck={false}
+              style={{ fontFamily: "var(--font-mono)", marginBottom: 14 }}
+            />
+
+            <label className="label" htmlFor="bridge-codex-mode">Codex Access</label>
+            <select
+              id="bridge-codex-mode"
+              className="input"
+              value={codexMode}
+              onChange={(e) => setCodexMode(e.target.value as CodexMode)}
+              style={{ marginBottom: 14 }}
+            >
+              <option value="unrestricted">Unrestricted</option>
+              <option value="full-auto">Full auto sandboxed</option>
+            </select>
+          </>
+        )}
 
         <label className="label" htmlFor="bridge-cwd">Working Directory</label>
         <input
@@ -126,6 +157,16 @@ export function BridgeConsole({ defaultCwd }: { defaultCwd: string }) {
           {result?.durationMs != null && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--dim)" }}>
               {result.durationMs}ms
+            </span>
+          )}
+          {result?.model && (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--dim)" }}>
+              {result.model}
+            </span>
+          )}
+          {result?.codexMode && (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--dim)" }}>
+              {result.codexMode}
             </span>
           )}
           {result?.id && (

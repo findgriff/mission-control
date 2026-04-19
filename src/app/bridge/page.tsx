@@ -6,6 +6,7 @@ export default function BridgePage() {
   const defaultCwd = process.env.MISSION_CONTROL_BRIDGE_CWD
     ?? process.env.MISSION_CONTROL_TERMINAL_CWD
     ?? process.cwd();
+  const defaultModel = process.env.MISSION_CONTROL_CODEX_MODEL ?? "gpt-5.1-codex-mini";
 
   return (
     <>
@@ -17,7 +18,7 @@ export default function BridgePage() {
         </p>
       </div>
 
-      <BridgeConsole defaultCwd={defaultCwd} />
+      <BridgeConsole defaultCwd={defaultCwd} defaultModel={defaultModel} />
     </>
   );
 }
