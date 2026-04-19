@@ -111,3 +111,53 @@ If `gpt-5.2` is rejected, identify a model supported by the VPS Codex account an
 
 - Added Mission Control bridge for running Codex CLI or shell repair jobs from the UI. Default runner is Codex CLI using an explicit model and unrestricted Codex CLI mode; shell runner executes the supplied command through the service user's shell.
 - Updated bridge default model to `gpt-5.2` after the VPS rejected Codex-specific models on a ChatGPT-linked Codex account. Shell runner remains the recommended control path until a working Codex model is confirmed on the VPS.
+- Audited full VPS deployment state. Findings:
+  - The GitHub repo (`/home/clawd/mission-control`) is the live running instance, managed by PM2 (`pm2 list`) on port 3001, proxied by nginx on port 80 at `/mission-control/`.
+  - A separate older codebase exists at `/home/clawd/clawd/openclaw-mission-control` and runs via systemd (`openclaw-mission-control.service`) on port 3055. This is a legacy version; nginx proxies `/mission-control/` to port 3001 (the GitHub repo), not 3055.
+  - The Dokku app `openclaw-mission-control` exists (`dokku apps:list`) but is not deployed (`Deployed: false`).
+  - All pages (tasks, agents, projects, calendar, memory, terminal, bridge) return 200 and show live OpenClaw data.
+  - Task errors ("Permission prompt unavailable in non-interactive mode") come from the OpenClaw CLI requiring interactive TTY; this is an OpenClaw runtime limitation, not a mission-control code bug.
+- Added `Procfile` (`web: node_modules/.bin/next start --port \${PORT:-3000}`) for Dokku deployments.
+- Updated `package.json` start script to accept `PORT` env via `--port \${PORT:-3000}`.
+- Added `engines.node` field (`>=20.0.0`) to `package.json`.
+
+## Dokku Deployment (VPS 188.166.150.21)
+
+The Dokku app `openclaw-mission-control` exists but is not currently active. The live app runs via PM2. To switch to Dokku deployment:
+
+```bash
+# On VPS as root — set required env vars on the Dokku app
+dokku config:set openclaw-mission-control \
+  NODE_ENV=production \
+  OPENCLAW_USER_HOME=/home/clawd \
+  OPENCLAW_HOME=/home/clawd/.openclaw \
+  OPENCLAW_BIN_DIR=/home/clawd/.npm-global/bin \
+  MISSION_CONTROL_WORKSPACE_ROOT=/home/clawd/clawd \
+  MISSION_CONTROL_TERMINAL_ENABLED=true \
+  MISSION_CONTROL_TERMINAL_CWD=/home/clawd/clawd \
+  MISSION_CONTROL_BRIDGE_CWD=/home/clawd/clawd/openclaw-mission-control \
+  MISSION_CONTROL_CODEX_MODEL=gpt-5.2
+
+# Change Dokku deploy branch to main (it defaults to master)
+dokku git:set openclaw-mission-control deploy-branch main
+
+# Push from the GitHub repo on VPS
+cd /home/clawd/mission-control
+git pull origin main
+git remote add dokku dokku@localhost:openclaw-mission-control 2>/dev/null || true
+git push dokku main
+
+# After Dokku deploys, update nginx to proxy to Dokku port instead of 3001
+# Or stop PM2 mission-control and let Dokku's nginx take over
+pm2 stop mission-control
+```
+
+Alternatively, just update the GitHub repo on VPS and restart PM2:
+
+```bash
+cd /home/clawd/mission-control
+git pull origin main
+npm ci --omit=dev
+npm run build
+pm2 restart mission-control
+```
