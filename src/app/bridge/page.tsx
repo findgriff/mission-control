@@ -1,24 +1,19 @@
-import { BridgeConsole } from "@/components/bridge-console";
+import { BridgeCockpit } from "@/components/bridge-cockpit";
 
 export const dynamic = "force-dynamic";
 
 export default function BridgePage() {
-  const defaultCwd = process.env.MISSION_CONTROL_BRIDGE_CWD
-    ?? process.env.MISSION_CONTROL_TERMINAL_CWD
-    ?? process.cwd();
-  const defaultModel = process.env.MISSION_CONTROL_CODEX_MODEL ?? "gpt-5.2";
-
   return (
     <>
       <div style={{ marginBottom: 20 }}>
-        <div className="section-tag" style={{ marginBottom: 6 }}>Agent</div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 4 }}>Bridge</h1>
+        <div className="section-tag" style={{ marginBottom: 6 }}>AI Docking Station</div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 4 }}>The Bridge</h1>
         <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
-          Run Codex CLI or shell repair jobs from Mission Control and write handoff logs into <code style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>.agent</code>.
+          Dock any LLM and give it autonomous control over Mission Control — read data, run commands, create tasks, commission agents.
         </p>
       </div>
 
-      <BridgeConsole defaultCwd={defaultCwd} defaultModel={defaultModel} />
+      <BridgeCockpit />
     </>
   );
 }
