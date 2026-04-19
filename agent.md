@@ -6,6 +6,9 @@ Use this file to keep a running handover for future agents working in this repo.
 
 - Project: OpenClaw Mission Control v2.
 - Working directory: `mission-control`.
+- Local development repo used for these edits: `/Users/findgriff/Documents/openclaw-mission-control-v2/mission-control`.
+- GitHub repo: `https://github.com/findgriff/mission-control`.
+- VPS repo path in recent user testing: `/home/clawd/mission-control`.
 - This file was added as a shared handover log for agent-to-agent continuity.
 - Current repo is a small Next.js 16 app mounted at `/mission-control`, not a complete standalone backend platform.
 - Implemented feature surface is dashboard/operator UI for OpenClaw runtime state: tasks, agents, projects, schedule, memory, project zip download, task creation, and agent commissioning.
@@ -19,6 +22,7 @@ Use this file to keep a running handover for future agents working in this repo.
 - Added `/terminal` with an unrestricted shell command runner backed by `/api/terminal`; it is enabled by default and can be disabled with `MISSION_CONTROL_TERMINAL_ENABLED=false`.
 - Added `/bridge` with a Codex CLI and shell runner backed by `/api/bridge`; it writes `.agent/inbox/current-task.md`, `.agent/runs/*.log`, and `.agent/runs/*.json` in the configured bridge working directory.
 - Updated bridge Codex runner to pass an explicit model. Default is `gpt-5.2` through `MISSION_CONTROL_CODEX_MODEL`, avoiding broken Codex CLI defaults such as unsupported Codex-specific models on ChatGPT-linked accounts.
+- Bridge shell runner is currently the reliable VPS control path. Bridge Codex runner depends on the VPS `codex` CLI account accepting the selected model.
 - Replaced hard-coded OpenClaw runtime paths with environment-configurable paths in `src/lib/data.ts` and `src/actions/index.ts`.
 - Fixed agent commissioning command to call only `openclaw agents new <name> <role>` and removed unsupported agent creation flags from the UI path.
 - Fixed task creation command to call only `openclaw tasks create <task>` and removed unsupported task creation flags from the UI path.
@@ -42,6 +46,8 @@ Use this file to keep a running handover for future agents working in this repo.
 - Keep the service bound to localhost or behind a hardened VPS access boundary before exposing it beyond trusted operators.
 - Terminal executes commands as the Mission Control service user when enabled. Do not enable it on an untrusted network.
 - Bridge executes Codex CLI or shell jobs as the Mission Control service user. Codex jobs require the `codex` CLI to be installed and authenticated for that user.
+- Do not assume Codex-specific model names work on the VPS. The VPS Codex CLI rejected both `gpt-5.2-codex` and `gpt-5.1-codex-mini` with a ChatGPT-linked account.
+- If Codex runner fails, use `/terminal` or `/bridge` with runner `Shell command` to pull/build/restart/debug the VPS repo.
 - Add a real installer/upgrade path, systemd unit, reverse proxy template, backup/restore procedure, release notes, and license.
 - Validate on the actual VPS where `/home/clawd/.openclaw` and the `openclaw` CLI exist.
 
@@ -57,7 +63,42 @@ Use this file to keep a running handover for future agents working in this repo.
   - `GET /mission-control/api/health` returns 200.
   - `GET /mission-control/tasks` returns 200 without app-level login, with sanitized missing-runtime error because local machine does not have the target OpenClaw SQLite database.
 - Bridge local validation passed: `POST /mission-control/api/bridge` with shell command `pwd && echo bridge-ok` returned 200 and wrote `.agent/inbox/current-task.md`, `.agent/runs/*.log`, and `.agent/runs/*.json`; `GET /mission-control/bridge` rendered bridge UI text.
+- Bridge model-control validation passed locally: page renders `Codex Model`, `gpt-5.2`, `Unrestricted`, and `Full auto sandboxed`; `npm run lint` and `npm run build` passed after this change.
+- VPS Codex CLI blocker observed by user:
+  - `codex exec --full-auto ...` used default `gpt-5.2-codex` and failed with `The 'gpt-5.2-codex' model is not supported when using Codex with a ChatGPT account.`
+  - `codex exec --dangerously-bypass-approvals-and-sandbox --model gpt-5.1-codex-mini ...` failed with `The 'gpt-5.1-codex-mini' model is not supported when using Codex with a ChatGPT account.`
+  - Latest repo default is now `gpt-5.2`, but this still needs to be tested on the VPS Codex account.
 - Known gap: no automated tests exist.
+
+## Latest GitHub Commits
+
+- `6c1d845 Use general GPT model for bridge default`
+- `3aed26a Pass explicit Codex bridge model`
+- `e656ef1 Add agent bridge runner`
+- `4537d60 Enable terminal by default`
+
+## VPS Handover Commands
+
+Use Mission Control Terminal or Bridge Shell runner if direct SSH/terminal is unavailable:
+
+```bash
+cd /home/clawd/mission-control
+git pull origin main
+npm ci
+rm -rf .next
+npm run build
+sudo systemctl restart openclaw-mission-control.service
+curl -i http://127.0.0.1:3055/mission-control/api/health
+```
+
+Test the Codex model separately before relying on Bridge Codex runner:
+
+```bash
+cd /home/clawd/mission-control
+codex exec --dangerously-bypass-approvals-and-sandbox --model gpt-5.2 "Say ok"
+```
+
+If `gpt-5.2` is rejected, identify a model supported by the VPS Codex account and set it in the Bridge page `Codex Model` field or in the service environment as `MISSION_CONTROL_CODEX_MODEL=<working-model>`.
 
 ## Handover Log
 
@@ -69,3 +110,4 @@ Use this file to keep a running handover for future agents working in this repo.
 ### 2026-04-19
 
 - Added Mission Control bridge for running Codex CLI or shell repair jobs from the UI. Default runner is Codex CLI using an explicit model and unrestricted Codex CLI mode; shell runner executes the supplied command through the service user's shell.
+- Updated bridge default model to `gpt-5.2` after the VPS rejected Codex-specific models on a ChatGPT-linked Codex account. Shell runner remains the recommended control path until a working Codex model is confirmed on the VPS.
