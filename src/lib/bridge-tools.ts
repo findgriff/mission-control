@@ -1,4 +1,4 @@
-import { exec, execFile, spawn } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -14,6 +14,20 @@ const OPENCLAW_BIN_DIR =
   process.env.OPENCLAW_BIN_DIR ?? `${OPENCLAW_USER_HOME}/.npm-global/bin`;
 const BRIDGE_CWD =
   process.env.MISSION_CONTROL_BRIDGE_CWD ?? `${OPENCLAW_USER_HOME}/clawd`;
+const OPENCLAW_HOME   = process.env.OPENCLAW_HOME ?? `${OPENCLAW_USER_HOME}/.openclaw`;
+const OPENCLAW_CONFIG = path.join(OPENCLAW_HOME, "openclaw.json");
+const GATEWAY_URL     = process.env.OPENCLAW_GATEWAY_URL ?? "http://127.0.0.1:18789";
+
+async function readGatewayToken(): Promise<string> {
+  if (process.env.OPENCLAW_GATEWAY_TOKEN) return process.env.OPENCLAW_GATEWAY_TOKEN;
+  try {
+    const raw = await readFile(OPENCLAW_CONFIG, "utf8");
+    const cfg = JSON.parse(raw) as { gateway?: { auth?: { token?: string } } };
+    return cfg?.gateway?.auth?.token ?? "";
+  } catch {
+    return "";
+  }
+}
 
 function bridgeEnv() {
   return {
@@ -143,25 +157,37 @@ async function toolCreateTask(args: Record<string, unknown>): Promise<ToolResult
   const message = typeof args.message === "string" ? args.message.trim() : "";
   if (!message) return fail("message is required.");
 
-  // Fire-and-forget: `openclaw agent` can take minutes to complete an agent turn.
-  // Spawn detached + unref so the process outlives this request, then return immediately.
-  return new Promise((resolve) => {
-    try {
-      const child = spawn(
-        "openclaw",
-        ["agent", "--message", message],
-        {
-          detached: true,
-          stdio: "ignore",
-          env: bridgeEnv(),
-        }
-      );
-      child.unref();
-      resolve(ok(`Task dispatched to agent. Message: "${message.slice(0, 80)}${message.length > 80 ? "…" : ""}"`));
-    } catch (e) {
-      resolve(fail(`Failed to dispatch task: ${e instanceof Error ? e.message : String(e)}`));
+  const token = await readGatewayToken();
+  if (!token) return fail("Gateway token not found. Check OPENCLAW_HOME or set OPENCLAW_GATEWAY_TOKEN.");
+
+  // POST to the OpenClaw gateway chat API — fire-and-forget (abort after 3 s).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    await fetch(`${GATEWAY_URL}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        model: "auto",
+        messages: [{ role: "user", content: message }],
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name !== "AbortError") {
+      clearTimeout(timer);
+      return fail(`Gateway unreachable: ${e.message}`);
     }
-  });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  return ok(`Task sent to gateway: "${message.slice(0, 80)}${message.length > 80 ? "…" : ""}"`);
 }
 
 async function toolCommissionAgent(args: Record<string, unknown>): Promise<ToolResult> {

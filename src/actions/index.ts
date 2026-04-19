@@ -1,13 +1,20 @@
 "use server";
 
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { revalidatePath } from "next/cache";
+import path from "node:path";
 
 const exec = promisify(execFile);
 
 const OPENCLAW_USER_HOME = process.env.OPENCLAW_USER_HOME ?? "/home/clawd";
-const OPENCLAW_BIN_DIR = process.env.OPENCLAW_BIN_DIR ?? `${OPENCLAW_USER_HOME}/.npm-global/bin`;
+const OPENCLAW_BIN_DIR   = process.env.OPENCLAW_BIN_DIR ?? `${OPENCLAW_USER_HOME}/.npm-global/bin`;
+const OPENCLAW_HOME      = process.env.OPENCLAW_HOME ?? `${OPENCLAW_USER_HOME}/.openclaw`;
+const OPENCLAW_CONFIG    = path.join(OPENCLAW_HOME, "openclaw.json");
+
+// Gateway defaults — overridden by env vars if set
+const GATEWAY_URL   = process.env.OPENCLAW_GATEWAY_URL ?? "http://127.0.0.1:18789";
 
 const CLAW_ENV = {
   ...process.env,
@@ -30,6 +37,18 @@ async function runClaw(args: string[]): Promise<{ ok: boolean; output: string }>
   }
 }
 
+// Read the gateway auth token from openclaw.json (or env override)
+async function readGatewayToken(): Promise<string> {
+  if (process.env.OPENCLAW_GATEWAY_TOKEN) return process.env.OPENCLAW_GATEWAY_TOKEN;
+  try {
+    const raw = await readFile(OPENCLAW_CONFIG, "utf8");
+    const cfg = JSON.parse(raw) as { gateway?: { auth?: { token?: string } } };
+    return cfg?.gateway?.auth?.token ?? "";
+  } catch {
+    return "";
+  }
+}
+
 // ── Create Task ────────────────────────────────────────────────────────────────
 
 export type TaskActionState = {
@@ -47,24 +66,46 @@ export async function createTask(
 
   if (!title) return { ok: false, error: "Title is required." };
 
-  // `openclaw agent --message` can take minutes to complete an agent turn.
-  // Fire-and-forget with a detached process so the HTTP request returns fast.
   const message = description ? `${title}\n\n${description}` : title;
+  const token   = await readGatewayToken();
 
-  return new Promise((resolve) => {
-    try {
-      const child = spawn("openclaw", ["agent", "--message", message], {
-        detached: true,
-        stdio: "ignore",
-        env: CLAW_ENV,
-      });
-      child.unref();
-      revalidatePath("/tasks");
-      resolve({ ok: true, output: "Task dispatched to agent." });
-    } catch (e) {
-      resolve({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  if (!token) {
+    return { ok: false, error: "Gateway token not found. Check OPENCLAW_CONFIG path or set OPENCLAW_GATEWAY_TOKEN." };
+  }
+
+  // POST to the OpenClaw gateway chat API — fire-and-forget.
+  // We abort after 3 s so the HTTP request returns fast; the gateway continues
+  // processing the message and creates a task_run entry in the background.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    await fetch(`${GATEWAY_URL}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        model: "auto",
+        messages: [{ role: "user", content: message }],
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    // AbortError is expected — we deliberately cut the connection.
+    // Any other error means the gateway wasn't reachable.
+    if (e instanceof Error && e.name !== "AbortError") {
+      clearTimeout(timer);
+      return { ok: false, error: `Gateway unreachable: ${e.message}` };
     }
-  });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  revalidatePath("/tasks");
+  return { ok: true, output: `Task sent to gateway: "${title}"` };
 }
 
 // ── Spawn Agent ────────────────────────────────────────────────────────────────
@@ -79,18 +120,15 @@ export async function spawnAgent(
   _prev: AgentActionState,
   formData: FormData
 ): Promise<AgentActionState> {
-  const name  = (formData.get("name") as string | null)?.trim() ?? "";
-  const role  = (formData.get("role") as string | null)?.trim() ?? "";
+  const name = (formData.get("name") as string | null)?.trim() ?? "";
+  const role = (formData.get("role") as string | null)?.trim() ?? "";
 
   if (!name) return { ok: false, error: "Name is required." };
   if (!role) return { ok: false, error: "Role is required." };
 
-  // `openclaw agents new` does not exist — correct command is `agents add`
-  // with --non-interactive (requires --workspace).
   const slug      = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const workspace = `${OPENCLAW_USER_HOME}/.openclaw/workspace-${slug}`;
 
-  // Ensure workspace dir exists before passing it to openclaw
   const { mkdir, writeFile } = await import("node:fs/promises");
   try { await mkdir(workspace, { recursive: true }); } catch { /* already exists */ }
 
@@ -101,10 +139,9 @@ export async function spawnAgent(
   ]);
 
   if (result.ok) {
-    // Write the role as SOUL.md so the agent has its personality/instructions
     try {
       await writeFile(`${workspace}/SOUL.md`, `# SOUL.md — ${name}\n\n${role}\n`, "utf8");
-    } catch { /* non-fatal — agent exists, soul write failed silently */ }
+    } catch { /* non-fatal */ }
 
     revalidatePath("/agents");
     return { ok: true, output: result.output || `Agent "${name}" commissioned.` };
