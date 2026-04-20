@@ -1,9 +1,19 @@
 import { getAgents } from "@/lib/data";
-import { dotClass, initials, timeAgo } from "@/lib/utils";
+import { dotClass, timeAgo } from "@/lib/utils";
 import { SpawnAgentButton } from "@/components/spawn-agent-form";
 import type { McRecord } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+
+// Six agent avatars — cycled in order so every colour is used before repeating
+const AGENT_AVATARS = [
+  "/mission-control/agent_blue.png",
+  "/mission-control/agent_green.png",
+  "/mission-control/agent_orange.png",
+  "/mission-control/agent_pink.png",
+  "/mission-control/agent_purple.png",
+  "/mission-control/agent_yellow.png",
+];
 
 export default async function AgentsPage({
   searchParams,
@@ -57,8 +67,8 @@ export default async function AgentsPage({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
-        {filtered.map((agent) => (
-          <AgentCard key={agent.id} agent={agent} />
+        {filtered.map((agent, idx) => (
+          <AgentCard key={agent.id} agent={agent} avatarSrc={AGENT_AVATARS[idx % AGENT_AVATARS.length]} />
         ))}
       </div>
 
@@ -67,10 +77,9 @@ export default async function AgentsPage({
   );
 }
 
-function AgentCard({ agent }: { agent: McRecord }) {
+function AgentCard({ agent, avatarSrc }: { agent: McRecord; avatarSrc: string }) {
   const status = String(agent.latestStatus ?? "idle");
   const name = agent.title;
-  const abbr = initials(name);
   const sessions = Number(agent.sessionCount ?? 0);
   const model = String(agent.model ?? "");
   const soul = String(agent.soul ?? agent.instructions ?? "");
@@ -85,16 +94,12 @@ function AgentCard({ agent }: { agent: McRecord }) {
         {/* Header row */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
           {/* Avatar */}
-          <div style={{
-            width: 46, height: 46, flexShrink: 0,
-            borderRadius: "50%",
-            background: "color-mix(in srgb, var(--purple) 12%, transparent)",
-            border: "1.5px solid color-mix(in srgb, var(--purple) 35%, transparent)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 800, color: "var(--purple)",
-          }}>
-            {abbr}
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={avatarSrc}
+            alt={name}
+            style={{ width: 46, height: 46, flexShrink: 0, borderRadius: "50%", objectFit: "cover" }}
+          />
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
