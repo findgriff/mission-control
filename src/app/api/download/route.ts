@@ -3,18 +3,17 @@ import path from "node:path";
 import { stat } from "node:fs/promises";
 
 const WORKSPACE = process.env.MISSION_CONTROL_WORKSPACE_ROOT ?? "/home/clawd/clawd";
-const ZIP_EXCLUDES = [
-  ".git/*",
-  "node_modules/*",
-  ".next/*",
-  "dist/*",
-  "build/*",
-  ".env",
-  ".env.*",
-  "*.pem",
-  "*.key",
-  "*.sqlite",
-  "*.db",
+const TAR_EXCLUDES = [
+  "--exclude=.git",
+  "--exclude=node_modules",
+  "--exclude=.next",
+  "--exclude=dist",
+  "--exclude=build",
+  "--exclude=.env",
+  "--exclude=*.pem",
+  "--exclude=*.key",
+  "--exclude=*.sqlite",
+  "--exclude=*.db",
 ];
 
 export async function GET(request: Request) {
@@ -45,32 +44,34 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // zip -r - . streams the zip to stdout
-      const excludeArgs = ZIP_EXCLUDES.flatMap((pattern) => ["-x", pattern]);
-      const proc = spawn("zip", ["-r", "-", ".", ...excludeArgs], { cwd: resolved });
+      // tar czf - streams a gzipped tarball to stdout
+      const proc = spawn("tar", ["czf", "-", ...TAR_EXCLUDES, "."], { cwd: resolved });
 
       proc.stdout.on("data", (chunk: Buffer) => {
-        controller.enqueue(new Uint8Array(chunk));
+        try { controller.enqueue(new Uint8Array(chunk)); } catch { /* client disconnected */ }
       });
 
       proc.stdout.on("end", () => {
-        controller.close();
+        try { controller.close(); } catch { /* already closed */ }
       });
 
       proc.on("error", (err) => {
-        controller.error(err);
+        try { controller.error(err); } catch { /* already closed */ }
       });
 
       proc.stderr.on("data", () => {
-        // suppress zip warnings (e.g. symlinks)
+        // suppress tar warnings
       });
+    },
+    cancel() {
+      // Client disconnected mid-download — normal, nothing to clean up
     },
   });
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${projectName}.zip"`,
+      "Content-Type": "application/gzip",
+      "Content-Disposition": `attachment; filename="${projectName}.tar.gz"`,
       "Cache-Control": "no-store",
     },
   });

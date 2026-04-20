@@ -51,11 +51,17 @@ export async function GET(request: Request): Promise<Response> {
 
   const stream = new ReadableStream({
     start(controller) {
-      // Send the endpoint event as required by MCP Streamable HTTP spec
-      controller.enqueue(
-        new TextEncoder().encode(`event: endpoint\ndata: ${postUrl}\n\n`)
-      );
-      // Keep the stream open — clients hold this connection for server-sent events
+      try {
+        // Send the endpoint event as required by MCP Streamable HTTP spec
+        controller.enqueue(
+          new TextEncoder().encode(`event: endpoint\ndata: ${postUrl}\n\n`)
+        );
+      } catch {
+        // Client disconnected before first write — safe to ignore
+      }
+    },
+    cancel() {
+      // Client disconnected — normal SSE lifecycle, nothing to clean up
     },
   });
 
