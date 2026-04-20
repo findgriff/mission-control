@@ -1,7 +1,9 @@
 import { getAgents } from "@/lib/data";
 import { dotClass, timeAgo } from "@/lib/utils";
-import { SpawnAgentButton } from "@/components/spawn-agent-form";
 import type { McRecord } from "@/lib/data";
+
+// Agents hidden from the UI (unused / not yet wired up)
+const HIDDEN_AGENTS = new Set(["codex", "marketing-orchestrator"]);
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +28,8 @@ export default async function AgentsPage({
   ]);
 
   const q = params?.q?.toLowerCase() ?? "";
-  const filtered = items.filter((a) =>
+  const visible = items.filter((a) => !HIDDEN_AGENTS.has(a.id.toLowerCase()));
+  const filtered = visible.filter((a) =>
     !q ||
     a.title.toLowerCase().includes(q) ||
     String(a.latestStatus ?? "").toLowerCase().includes(q) ||
@@ -41,7 +44,7 @@ export default async function AgentsPage({
         <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>
           {error
             ? <span style={{ color: "var(--red)" }}>⚠ {error}</span>
-            : <>{items.length} agent{items.length !== 1 ? "s" : ""} from <code style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{source}</code></>
+            : <>{visible.length} agent{visible.length !== 1 ? "s" : ""} from <code style={{ fontFamily: "var(--font-mono)", fontSize: 11 }}>{source}</code></>
           }
         </p>
       </div>
@@ -72,7 +75,6 @@ export default async function AgentsPage({
         ))}
       </div>
 
-      <SpawnAgentButton />
     </>
   );
 }
